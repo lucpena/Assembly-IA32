@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Verifica se o usuário forneceu um nome de arquivo
 if [ -z "$1" ]; then
     echo "Uso: $0 <nome_do_arquivo_asm>"
@@ -40,5 +38,6 @@ gdb ./"$EXECUTABLE" \
     -ex "tui enable" \
     -ex "layout src" \
     -ex "layout reg" \
-    -ex "b main" \
-    -ex "c"
+    -ex "set output-radix 10" \
+    -ex "b _start" \
+    -ex "run"
