@@ -1,71 +1,105 @@
 section .data
 
-    num1    dd      100
-    num2    dd      100
+    buffer      db      '0000000000', 0
+    buffer_size equ     2
 
-    buffer  db      '0000000000', 0
+    msg1        db      'Enter the first number: ', 0x10
+    msg1_len    equ     $-msg1
 
-    msg     db      'The result is: ', 0x10
-    msg_len equ     $-msg
+    msg2        db      'Enter the second number: ', 0x10
+    msg2_len    equ     $-msg2
 
-    nwln     db      0x10, 0xA
+    msg3        db      'The sum is: ', 0x10
+    msg3_len    equ     $-msg3
+
+    nwln        db      0x10, 0xA
 
 section .bss
 
-    result  resd    1
+    num1        resd    1
+    num2        resd    1
+
+    result      resd    1
 
 section .text
     global _start
 
 _start:
 
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, msg1
+    mov edx, msg1_len
+    int 0x80
+
+    mov eax, 3
+    mov ebx, 1
+    mov ecx, num1
+    mov edx, buffer_size
+    int 0x80
+
+    mov eax, 4
+    mov ebx, 0
+    mov ecx, msg2
+    mov edx, msg2_len
+    int 0x80
+
+    mov eax, 3
+    mov ebx, 0
+    mov ecx, num2
+    mov edx, buffer_size
+    int 0x80
+
+    push dword[num1]
+    sub eax, eax
+    sub ebx, ebx
+    call stoi
+    mov [num1], eax
+    pop
+
+    push dword[num2]
+    sub eax, eax
+    sub ebx, ebx
+    call stoi
+    mov [num2], eax
+    pop
+
     push dword[num1]
     push dword[num2]
     call add
     mov [result], eax
+    pop
+    pop
 
-    ; mov ecx, 10
-    ; mov edi, buffer + 9
+    mov edi, buffer + 9
+    mov eax, [result]
+    call itoa
 
-    ; push dword[num1]
-    ; push dword[num2]
-    ; push ebx
-    ; push ecx
-    ; push edi
+    mov eax, buffer + 10
+    sub eax, edi
+    mov edx, eax
+    mov eax, 4
+    mov ebx, 1
+    lea ecx, [edi + 1] 
+    int 0x80
 
-    ; call itoa
-
-    ; mov eax, 4
-    ; mov ebx, 1
-    ; mov ecx, msg
-    ; mov edx, msg_len
-    ; int 0x80
-
-    ; mov eax, buffer + 9
-    ; sub eax, edi
-    ; mov edx, eax
-    ; mov eax, 4
-    ; mov ebx, 1
-    ; lea ecx, [edi + 1] 
-    ; int 0x80
-
-    ; mov eax, 4
-    ; mov ebx, 1
-    ; mov ecx, nwln
-    ; mov edx, 2
-    ; int 0x80
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, nwln
+    mov edx, 2
+    int 0x80
     
     mov eax, 1
     sub ebx, ebx
     int 0x80
 
-%define Y dword[EBP + 12]
-%define X dword[EBP + 8]
-; Return Address => [EBP + 4] (CALL)
-; EBP => [EBP]  ↓ LOCAL STACK ↓
-%define RESULT dword[EBP - 4]
-
 add:
+    %define Y dword[EBP + 12]
+    %define X dword[EBP + 8]
+    ; Return Address => [EBP + 4] (CALL)
+    ; EBP => [EBP]  ↓ LOCAL STACK ↓
+    %define RESULT dword[EBP - 4]
+
     enter 4, 0
 
         mov eax, X
@@ -79,15 +113,42 @@ add:
     ret    
 
 itoa:
-    push ebp
-    mov ebp, esp
+    enter 0,0
+    
+    itoa_loop:
 
-    sub edx, edx
-    div ecx
-    add dl, '0'
-    mov [edi], dl
-    dec edi
-    test eax, eax
-    jnz itoa
+        sub edx, edx
+        mov ecx, 10
+        div ecx
+        add dl, '0'
+        mov [edi], dl
+        dec edi
+        test eax, eax
+        jnz itoa_loop
 
+    leave
+    ret
+
+stoi:
+    %define VALUE   dword[EBP + 8]
+    ; Return Address => [EBP + 4] (CALL)
+    ; EBP => [EBP]  ↓ LOCAL STACK ↓
+    enter 0,0
+
+    stoi_loop:
+
+        mov ebx, VALUE
+        cmp ebx, 0xA
+        je stoi_loop_end
+        sub ebx, '0'
+        imul eax, eax, 10
+        add eax, ebx
+        inc esi
+        jmp stoi_loop
+
+    stoi_loop_end:
+
+    mov 
+
+    leave
     ret
