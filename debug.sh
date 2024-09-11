@@ -39,5 +39,5 @@ gdb ./"$EXECUTABLE" \
     -ex "layout src" \
     -ex "layout reg" \
     -ex "set output-radix 10" \
-    -ex "b _break" \
+    -ex "b _start" \
     -ex "run"

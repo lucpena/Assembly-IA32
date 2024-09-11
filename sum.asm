@@ -27,19 +27,19 @@ section .text
 _start:
 
     mov eax, 4
-    mov ebx, 0
+    mov ebx, 1
     mov ecx, msg1
     mov edx, msg1_len
     int 0x80
 
     mov eax, 3
-    mov ebx, 1
+    mov ebx, 0
     mov ecx, num1
     mov edx, buffer_size
     int 0x80
 
     mov eax, 4
-    mov ebx, 0
+    mov ebx, 1
     mov ecx, msg2
     mov edx, msg2_len
     int 0x80

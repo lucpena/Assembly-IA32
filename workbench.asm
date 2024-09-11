@@ -1,157 +1,79 @@
 section .data
 
-    buffer      db      '0000000000', 0
-    buffer_size equ     10
+    file_in         db      'input.txt', 0
+    file_out        db      'output.txt', 0
 
-    msg1        db      'Enter the first number: ', 0x10
-    msg1_len    equ     $-msg1
+    matrix1         db      3, 3, 3, 3, 3, 3, 3, 3, 3
+    matrix3         db      3, 3, 3, 3, 3, 3, 3, 3, 3
 
-    msg2        db      'Enter the second number: ', 0x10
-    msg2_len    equ     $-msg2
-
-    msg3        db      'The sum is: ', 0x10
-    msg3_len    equ     $-msg3
-
-    nwln        db      0x10, 0xA
+    space           db      ' ', 0
 
 section .bss
 
-    num1        resb    buffer_size
-    num2        resb    buffer_size
+    in_fd           resd    1
+    out_fd          resd    1
 
-    result      resd    1
+    matrix2         resb    9
+    matrixResult    resb    9
 
 section .text
     global _start
 
 _start:
 
-    mov eax, 4
-    mov ebx, 0
-    mov ecx, msg1
-    mov edx, msg1_len
+    mov eax, 5
+    mov ebx, file_in
+    mov ecx, 0
     int 0x80
+    mov [in_fd], eax
 
     mov eax, 3
-    mov ebx, 1
-    mov ecx, num1
-    mov edx, buffer_size
+    mov ebx, [in_fd]
+    mov ecx, matrix2
+    mov edx, 9
+
+    mov eax, 5
+    mov ebx, file_out 
+    mov ecx, 01101o
+    mov edx, 0666o
     int 0x80
+    mov [out_fd], eax
+
+    mov ecx, 3
+    sub ebx, ebx
+    sub esi, esi
+    sub eax, eax
+    sub edx, edx
+
+sum:
+    mov al, [matrix1 + ebx + esi]
+    mov dl, [matrix3 + ebx + esi]
+    add al, dl
+    add al, '0'
+    mov [matrixResult + ebx + esi], al
+    inc esi
+    cmp esi, 3
+    jb sum
+    add ebx, 3
+    mov esi, 0
+    loop sum
+
+    sub esi, esi    
 
     mov eax, 4
-    mov ebx, 0
-    mov ecx, msg2
-    mov edx, msg2_len
+    mov ebx, [out_fd]
+    lea ecx, [matrixResult]
+    mov edx, 9
     int 0x80
 
-    mov eax, 3
-    mov ebx, 0
-    mov ecx, num2
-    mov edx, buffer_size
-    int 0x80
-_break:
-    push num1
-    call atoi
-    mov [num1], eax
-
-    push num2
-    call atoi
-    mov [num2], eax
-
-    push dword[num1]
-    push dword[num2]
-    call add
-    mov [result], eax
-
-    mov edi, buffer + 9
-    mov eax, [result]
-    call itoa
-
-    mov eax, 4
-    mov ebx, 1
-    mov ecx, msg3
-    mov edx, msg3_len
+    mov eax, 6
+    mov ebx, [in_fd]
     int 0x80
 
-    mov eax, buffer + 10
-    sub eax, edi
-    mov edx, eax
-    mov eax, 4
-    mov ebx, 1
-    lea ecx, [edi + 1] 
+    mov eax, 6
+    mov ebx, [out_fd]
     int 0x80
 
-    mov eax, 4
-    mov ebx, 1
-    mov ecx, nwln
-    mov edx, 2
-    int 0x80
-    
     mov eax, 1
     sub ebx, ebx
     int 0x80
-
-add:
-    %define Y dword[EBP + 12]
-    %define X dword[EBP + 8]
-    ; Return Address => [EBP + 4] (CALL)
-    ; EBP => [EBP]  ↓ LOCAL STACK ↓
-    %define RESULT dword[EBP - 4]
-
-    enter 4, 0
-
-        mov eax, X
-        add eax, Y
-        
-        ; Useless, just to do some tom foolery
-        mov RESULT, eax
-        mov eax, RESULT        
-
-    leave
-    ret    
-
-itoa:
-    enter 0,0
-    
-    itoa_loop:
-
-        sub edx, edx
-        mov ecx, 10
-        div ecx
-        add dl, '0'
-        mov [edi], dl
-        dec edi
-        test eax, eax
-        jnz itoa_loop
-
-    leave
-    ret 8
-
-atoi:
-    %define VALUE [EBP + 8]
-    ; Return Address => [EBP + 4] (CALL)
-    ; EBP => [EBP]  ↓ LOCAL STACK ↓
-    enter 0,0
-
-    sub eax, eax
-    sub ebx, ebx 
-    
-    mov esi, VALUE
-       
-    atoi_loop:
-
-        mov bl, byte[esi]
-        cmp bl, 0xA ; new line
-        je atoi_loop_end
-        cmp ebx, 0 ; null char frum ASCII, not number '0'
-        je atoi_loop_end
-        sub bl, '0' ; here's number '0'
-        imul eax, eax, 10
-        add eax, ebx
-        inc esi
-        jmp atoi_loop
-
-    atoi_loop_end:
-
-    leave
-    ret 4
